@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_routes.dart';
 
@@ -60,52 +61,80 @@ class _SuccessScreenState extends State<SuccessScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.navy,
-      body: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Yellow checkmark circle
-                ScaleTransition(
-                  scale: _scaleAnim,
-                  child: Container(
-                    width: 110,
-                    height: 110,
-                    decoration: const BoxDecoration(
-                      color: AppColors.yellow,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: AppColors.white,
-                      size: 60,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: AppColors.offWhite,
+        body: SafeArea(
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Yellow checkmark circle
+                  ScaleTransition(
+                    scale: _scaleAnim,
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: AppColors.yellow,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.yellow.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: AppColors.navy,
+                        size: 60,
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                const Text('Success!', style: AppTextStyles.yellowBold),
+                  // Locally overridden — AppTextStyles.yellowBold is pure
+                  // yellow, which reads weakly on a light background.
+                  const Text(
+                    'Success!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
+                      letterSpacing: 1,
+                    ),
+                  ),
 
-                const SizedBox(height: 48),
+                  const SizedBox(height: 48),
 
-                Image.asset('assets/images/logo.png', width: 200, height: 200),
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 200,
+                  ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                const Text(
-                  'Our team is ready!',
-                  style: AppTextStyles.yellowBold,
-                ),
+                  const Text(
+                    'Our team is ready!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
+                      letterSpacing: 1,
+                    ),
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                const Text('Taking you in...', style: AppTextStyles.bodyGrey),
-              ],
+                  const Text('Taking you in...', style: AppTextStyles.bodyGrey),
+                ],
+              ),
             ),
           ),
         ),

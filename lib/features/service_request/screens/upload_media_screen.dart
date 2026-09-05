@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_routes.dart';
 
 class UploadMediaScreen extends StatefulWidget {
@@ -12,14 +13,8 @@ class UploadMediaScreen extends StatefulWidget {
 }
 
 class _UploadMediaScreenState extends State<UploadMediaScreen> {
-  // ── Theme colours ──────────────────────────────────────────────────────────
-  static const Color _bg       = Color(0xFF0A1628);
-  static const Color _card     = Color(0xFF111F3A);
-  static const Color _yellow   = Color(0xFFFFD700);
-  static const Color _inputFill= Color(0xFF0D1E35);
-  static const Color _border   = Color(0xFF1E3A5F);
-  static const Color _textPri  = Colors.white;
-  static const Color _textSec  = Color(0xFF8899BB);
+  // Light input fill, sits inside white cards.
+  static const Color _inputFill = Color(0xFFF7F8FA);
 
   // ── Size limits ────────────────────────────────────────────────────────────
   static const int _maxPhotos        = 5;
@@ -38,7 +33,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
   void _showPhotoSource() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: _card,
+      backgroundColor: AppColors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -53,23 +48,23 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                 width: 40, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: _border,
+                  color: AppColors.greyLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_rounded, color: _yellow),
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.yellowDark),
                 title: const Text('Choose from Gallery',
-                    style: TextStyle(color: _textPri)),
+                    style: TextStyle(color: AppColors.navy)),
                 onTap: () {
                   Navigator.pop(context);
                   _pickFromGallery();
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt_rounded, color: _yellow),
+                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.yellowDark),
                 title: const Text('Take Photo',
-                    style: TextStyle(color: _textPri)),
+                    style: TextStyle(color: AppColors.navy)),
                 onTap: () {
                   Navigator.pop(context);
                   _pickFromCamera();
@@ -143,7 +138,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: _card,
+        backgroundColor: AppColors.navy,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -196,18 +191,18 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.offWhite,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AppColors.offWhite,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _textPri),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.navy),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Upload Media',
           style: TextStyle(
-            color: _textPri,
+            color: AppColors.navy,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -232,7 +227,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                         const Text(
                           'Upload Photos',
                           style: TextStyle(
-                            color: _textPri,
+                            color: AppColors.navy,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -242,13 +237,13 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: _yellow.withOpacity(0.15),
+                            color: AppColors.yellow.withOpacity(0.18),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Min 2 • Max 5',
                             style: TextStyle(
-                              color: _yellow,
+                              color: AppColors.yellowDark,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -259,7 +254,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Upload clear photos of the signage issue (max ${_maxPhotoMB}MB each)',
-                      style: const TextStyle(color: _textSec, fontSize: 12),
+                      style: const TextStyle(color: AppColors.grey, fontSize: 12),
                     ),
                     const SizedBox(height: 16),
 
@@ -276,7 +271,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                         const Text(
                           'Add Video',
                           style: TextStyle(
-                            color: _textPri,
+                            color: AppColors.navy,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -286,13 +281,13 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: _border,
+                            color: AppColors.greyLight,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
                             'Optional',
                             style: TextStyle(
-                              color: _textSec,
+                              color: AppColors.grey,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -303,7 +298,7 @@ class _UploadMediaScreenState extends State<UploadMediaScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Upload a short video for better understanding (max ${_maxVideoMB}MB)',
-                      style: const TextStyle(color: _textSec, fontSize: 12),
+                      style: const TextStyle(color: AppColors.grey, fontSize: 12),
                     ),
                     const SizedBox(height: 14),
                     _video == null
@@ -361,12 +356,6 @@ class _StepIndicator extends StatelessWidget {
   final int currentStep; // 1-based
   const _StepIndicator({required this.currentStep});
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _done   = Color(0xFF1E3A5F);
-  static const Color _active = _yellow;
-  static const Color _textPri= Colors.white;
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     const steps = ['Details', 'Media', 'Location'];
@@ -378,7 +367,7 @@ class _StepIndicator extends StatelessWidget {
           return Expanded(
             child: Container(
               height: 2,
-              color: filled ? _yellow : _done,
+              color: filled ? AppColors.yellow : AppColors.greyLight,
             ),
           );
         }
@@ -391,20 +380,20 @@ class _StepIndicator extends StatelessWidget {
               width: 30, height: 30,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isComplete ? _yellow
-                     : isActive   ? _yellow
-                     : _done,
+                color: isComplete ? AppColors.yellow
+                     : isActive   ? AppColors.yellow
+                     : AppColors.greyLight,
                 border: isActive
-                    ? Border.all(color: _yellow, width: 2)
+                    ? Border.all(color: AppColors.yellow, width: 2)
                     : null,
               ),
               child: Center(
                 child: isComplete
-                    ? const Icon(Icons.check, color: Colors.black, size: 16)
+                    ? const Icon(Icons.check, color: AppColors.navy, size: 16)
                     : Text(
                         '$idx',
                         style: TextStyle(
-                          color: isActive ? Colors.black : _textSec,
+                          color: isActive ? AppColors.navy : AppColors.grey,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -416,7 +405,7 @@ class _StepIndicator extends StatelessWidget {
               steps[idx - 1],
               style: TextStyle(
                 fontSize: 10,
-                color: isActive || isComplete ? _textPri : _textSec,
+                color: isActive || isComplete ? AppColors.navy : AppColors.grey,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -433,11 +422,6 @@ class _EmptyPhotoSlot extends StatelessWidget {
   final VoidCallback onTap;
   const _EmptyPhotoSlot({required this.onTap});
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _card   = Color(0xFF111F3A);
-  static const Color _border = Color(0xFF1E3A5F);
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -446,9 +430,15 @@ class _EmptyPhotoSlot extends StatelessWidget {
         width: double.infinity,
         height: 140,
         decoration: BoxDecoration(
-          color: _card,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border, style: BorderStyle.solid),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -456,19 +446,19 @@ class _EmptyPhotoSlot extends StatelessWidget {
             Container(
               width: 48, height: 48,
               decoration: BoxDecoration(
-                color: _yellow.withOpacity(0.12),
+                color: AppColors.yellow.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.add_photo_alternate_rounded,
-                  color: _yellow, size: 26),
+                  color: AppColors.yellowDark, size: 26),
             ),
             const SizedBox(height: 10),
             const Text('Tap to add photos',
-                style: TextStyle(color: Colors.white, fontSize: 14,
+                style: TextStyle(color: AppColors.navy, fontSize: 14,
                     fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             const Text('Camera or Gallery',
-                style: TextStyle(color: _textSec, fontSize: 12)),
+                style: TextStyle(color: AppColors.grey, fontSize: 12)),
           ],
         ),
       ),
@@ -526,11 +516,6 @@ class _AddMoreTile extends StatelessWidget {
   final VoidCallback onTap;
   const _AddMoreTile({required this.onTap});
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _card   = Color(0xFF111F3A);
-  static const Color _border = Color(0xFF1E3A5F);
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     final size = (MediaQuery.of(context).size.width - 40 - 24) / 3;
@@ -539,17 +524,23 @@ class _AddMoreTile extends StatelessWidget {
       child: Container(
         width: size, height: size,
         decoration: BoxDecoration(
-          color: _card,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add, color: _yellow, size: 26),
+            const Icon(Icons.add, color: AppColors.yellowDark, size: 26),
             const SizedBox(height: 4),
             const Text('Add More',
-                style: TextStyle(color: _textSec, fontSize: 11)),
+                style: TextStyle(color: AppColors.grey, fontSize: 11)),
           ],
         ),
       ),
@@ -563,11 +554,6 @@ class _VideoPickerSlot extends StatelessWidget {
   final VoidCallback onTap;
   const _VideoPickerSlot({required this.onTap});
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _card   = Color(0xFF111F3A);
-  static const Color _border = Color(0xFF1E3A5F);
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -576,9 +562,15 @@ class _VideoPickerSlot extends StatelessWidget {
         width: double.infinity,
         height: 68,
         decoration: BoxDecoration(
-          color: _card,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -586,10 +578,10 @@ class _VideoPickerSlot extends StatelessWidget {
             Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: _yellow.withOpacity(0.12),
+                color: AppColors.yellow.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.videocam_rounded, color: _yellow, size: 22),
+              child: const Icon(Icons.videocam_rounded, color: AppColors.yellowDark, size: 22),
             ),
             const SizedBox(width: 14),
             const Column(
@@ -597,16 +589,16 @@ class _VideoPickerSlot extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Select Video',
-                    style: TextStyle(color: Colors.white, fontSize: 14,
+                    style: TextStyle(color: AppColors.navy, fontSize: 14,
                         fontWeight: FontWeight.w500)),
                 SizedBox(height: 2),
                 Text('Optional · Max 50MB',
-                    style: TextStyle(color: _textSec, fontSize: 11)),
+                    style: TextStyle(color: AppColors.grey, fontSize: 11)),
               ],
             ),
             const Spacer(),
             const Icon(Icons.arrow_forward_ios_rounded,
-                color: _textSec, size: 14),
+                color: AppColors.grey, size: 14),
             const SizedBox(width: 16),
           ],
         ),
@@ -624,11 +616,6 @@ class _VideoThumbnail extends StatelessWidget {
   const _VideoThumbnail({
     required this.file, required this.onTap, required this.onRemove});
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _card   = Color(0xFF111F3A);
-  static const Color _border = Color(0xFF1E3A5F);
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -637,9 +624,16 @@ class _VideoThumbnail extends StatelessWidget {
         width: double.infinity,
         height: 68,
         decoration: BoxDecoration(
-          color: _card,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _yellow.withOpacity(0.4)),
+          border: Border.all(color: AppColors.yellow.withOpacity(0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -647,11 +641,11 @@ class _VideoThumbnail extends StatelessWidget {
             Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: _yellow.withOpacity(0.15),
+                color: AppColors.yellow.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.play_circle_fill_rounded,
-                  color: _yellow, size: 26),
+                  color: AppColors.yellowDark, size: 26),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -661,13 +655,13 @@ class _VideoThumbnail extends StatelessWidget {
                 children: [
                   Text(
                     file.path.split('/').last,
-                    style: const TextStyle(color: Colors.white, fontSize: 13,
+                    style: const TextStyle(color: AppColors.navy, fontSize: 13,
                         fontWeight: FontWeight.w500),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   const Text('Tap to preview',
-                      style: TextStyle(color: _textSec, fontSize: 11)),
+                      style: TextStyle(color: AppColors.grey, fontSize: 11)),
                 ],
               ),
             ),
@@ -676,7 +670,7 @@ class _VideoThumbnail extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Icon(Icons.delete_outline_rounded,
-                    color: Colors.redAccent, size: 22),
+                    color: AppColors.red, size: 22),
               ),
             ),
           ],
@@ -698,20 +692,20 @@ class _BottomBar extends StatelessWidget {
     required this.onContinue,
   });
 
-  static const Color _yellow = Color(0xFFFFD700);
-  static const Color _card   = Color(0xFF111F3A);
-  static const Color _textSec= Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     final ready = photoCount >= minPhotos;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
-        color: _card,
-        border: const Border(
-          top: BorderSide(color: Color(0xFF1E3A5F)),
-        ),
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -739,8 +733,8 @@ class _BottomBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: ready ? onContinue : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _yellow,
-                disabledBackgroundColor: _yellow.withOpacity(0.3),
+                backgroundColor: AppColors.yellow,
+                disabledBackgroundColor: AppColors.yellow.withOpacity(0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -749,7 +743,7 @@ class _BottomBar extends StatelessWidget {
               child: Text(
                 'Continue',
                 style: TextStyle(
-                  color: ready ? Colors.black : Colors.black45,
+                  color: ready ? AppColors.navy : AppColors.navy.withOpacity(0.4),
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -770,7 +764,7 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = ok ? const Color(0xFF00C853) : const Color(0xFF8899BB);
+    final color = ok ? AppColors.green : AppColors.grey;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -783,7 +777,7 @@ class _Chip extends StatelessWidget {
 }
 
 // ============================================================================
-//  FULL-SCREEN PHOTO PREVIEW
+//  FULL-SCREEN PHOTO PREVIEW (kept black — standard media-viewer UX)
 // ============================================================================
 
 class _FullScreenPhoto extends StatelessWidget {
@@ -813,7 +807,7 @@ class _FullScreenPhoto extends StatelessWidget {
 }
 
 // ============================================================================
-//  FULL-SCREEN VIDEO PREVIEW
+//  FULL-SCREEN VIDEO PREVIEW (kept black — standard media-viewer UX)
 // ============================================================================
 
 class _FullScreenVideo extends StatefulWidget {
@@ -881,7 +875,7 @@ class _FullScreenVideoState extends State<_FullScreenVideo> {
                 aspectRatio: _controller.value.aspectRatio,
                 child: VideoPlayer(_controller),
               )
-            : const CircularProgressIndicator(color: Color(0xFFFFD700)),
+            : const CircularProgressIndicator(color: AppColors.yellow),
       ),
     );
   }

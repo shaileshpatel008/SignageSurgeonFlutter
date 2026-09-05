@@ -1,17 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_routes.dart';
 
 class RequestSummaryScreen extends StatelessWidget {
   const RequestSummaryScreen({super.key});
-
-  // ── Theme colours ──────────────────────────────────────────────────────────
-  static const Color _bg      = Color(0xFF0A1628);
-  static const Color _card    = Color(0xFF111F3A);
-  static const Color _yellow  = Color(0xFFFFD700);
-  static const Color _border  = Color(0xFF1E3A5F);
-  static const Color _textPri = Colors.white;
-  static const Color _textSec = Color(0xFF8899BB);
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +26,18 @@ class RequestSummaryScreen extends StatelessWidget {
         '${video != null ? ', 1 Video' : ''}';
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.offWhite,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AppColors.offWhite,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _textPri),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.navy),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Request Summary',
           style: TextStyle(
-            color: _textPri,
+            color: AppColors.navy,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -63,7 +56,7 @@ class RequestSummaryScreen extends StatelessWidget {
                     const Text(
                       'Please review your request',
                       style: TextStyle(
-                        color: _textSec,
+                        color: AppColors.grey,
                         fontSize: 13,
                       ),
                     ),
@@ -73,9 +66,15 @@ class RequestSummaryScreen extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: _card,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: _border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
@@ -127,7 +126,7 @@ class RequestSummaryScreen extends StatelessWidget {
                       const Text(
                         'Uploaded Photos',
                         style: TextStyle(
-                          color: _textPri,
+                          color: AppColors.navy,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -168,7 +167,7 @@ class RequestSummaryScreen extends StatelessWidget {
                       const Text(
                         'Uploaded Video',
                         style: TextStyle(
-                          color: _textPri,
+                          color: AppColors.navy,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -178,34 +177,41 @@ class RequestSummaryScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: _card,
+                          color: AppColors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: _yellow.withOpacity(0.3)),
+                              color: AppColors.yellow.withOpacity(0.4)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
                             Container(
                               width: 38, height: 38,
                               decoration: BoxDecoration(
-                                color: _yellow.withOpacity(0.15),
+                                color: AppColors.yellow.withOpacity(0.18),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
                                   Icons.play_circle_fill_rounded,
-                                  color: _yellow, size: 22),
+                                  color: AppColors.yellowDark, size: 22),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 video.path.split('/').last,
                                 style: const TextStyle(
-                                    color: _textPri, fontSize: 13),
+                                    color: AppColors.navy, fontSize: 13),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const Icon(Icons.check_circle_rounded,
-                                color: Colors.greenAccent, size: 18),
+                                color: AppColors.green, size: 18),
                           ],
                         ),
                       ),
@@ -217,16 +223,16 @@ class RequestSummaryScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: _yellow.withOpacity(0.07),
+                        color: AppColors.yellow.withOpacity(0.10),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: _yellow.withOpacity(0.2)),
+                            color: AppColors.yellow.withOpacity(0.3)),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(Icons.info_outline_rounded,
-                              color: _yellow, size: 16),
+                              color: AppColors.yellowDark, size: 16),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -234,7 +240,7 @@ class RequestSummaryScreen extends StatelessWidget {
                               'information provided is accurate and site access '
                               'will be made available for inspection.',
                               style: TextStyle(
-                                  color: _textSec, fontSize: 12,
+                                  color: Color(0xFF6B7280), fontSize: 12,
                                   height: 1.5),
                             ),
                           ),
@@ -251,9 +257,15 @@ class RequestSummaryScreen extends StatelessWidget {
             // ── Bottom bar ────────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-              decoration: const BoxDecoration(
-                color: _card,
-                border: Border(top: BorderSide(color: _border)),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -268,14 +280,14 @@ class RequestSummaryScreen extends StatelessWidget {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.edit_rounded, color: _textSec, size: 14),
+                        Icon(Icons.edit_rounded, color: AppColors.grey, size: 14),
                         SizedBox(width: 6),
                         Text(
                           'Edit Request',
                           style: TextStyle(
-                              color: _textSec, fontSize: 13,
+                              color: AppColors.grey, fontSize: 13,
                               decoration: TextDecoration.underline,
-                              decorationColor: _textSec),
+                              decorationColor: AppColors.grey),
                         ),
                       ],
                     ),
@@ -290,7 +302,7 @@ class RequestSummaryScreen extends StatelessWidget {
                             arguments: args);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _yellow,
+                        backgroundColor: AppColors.yellow,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -299,7 +311,7 @@ class RequestSummaryScreen extends StatelessWidget {
                       child: const Text(
                         'Submit Request',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: AppColors.navy,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -347,10 +359,6 @@ class _SummaryRow extends StatelessWidget {
     this.valueBadge = false,
   });
 
-  static const Color _yellow  = Color(0xFFFFD700);
-  static const Color _textPri = Colors.white;
-  static const Color _textSec = Color(0xFF8899BB);
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -362,10 +370,10 @@ class _SummaryRow extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: _yellow.withOpacity(0.12),
+              color: AppColors.yellow.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: _yellow, size: 18),
+            child: Icon(icon, color: AppColors.yellowDark, size: 18),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -375,7 +383,7 @@ class _SummaryRow extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                      color: _textSec, fontSize: 11,
+                      color: AppColors.grey, fontSize: 11,
                       fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
@@ -384,13 +392,13 @@ class _SummaryRow extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.15),
+                          color: AppColors.red.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           value,
                           style: const TextStyle(
-                              color: Colors.redAccent,
+                              color: AppColors.red,
                               fontSize: 13,
                               fontWeight: FontWeight.w600),
                         ),
@@ -398,7 +406,7 @@ class _SummaryRow extends StatelessWidget {
                     : Text(
                         value,
                         style: const TextStyle(
-                            color: _textPri,
+                            color: AppColors.navy,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             height: 1.4),
@@ -418,7 +426,7 @@ class _Divider extends StatelessWidget {
     return const Divider(
       height: 1,
       thickness: 1,
-      color: Color(0xFF1E3A5F),
+      color: AppColors.greyLight,
       indent: 16,
       endIndent: 16,
     );

@@ -76,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navy,
+      backgroundColor: const Color(0xFFFEC107),
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnim,
@@ -85,18 +85,28 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/logo.png', width: 180, height: 180),
-                const SizedBox(height: 24),
+                // Transparent-background logo (no white halo), scaled up.
+                // Width-only sizing keeps the source aspect ratio intact.
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 190,
+                ),
+                const SizedBox(height: 28),
                 const Text(
                   'THE SIGNAGE SURGEON',
-                  style: AppTextStyles.yellowBold,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    letterSpacing: 1,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   'NEW LIFE FOR OLD SIGNS',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.grey,
+                    color: Colors.black,
                     letterSpacing: 2,
                   ),
                 ),
@@ -105,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    color: AppColors.yellow,
+                    color: Colors.black,
                     strokeWidth: 2,
                   ),
                 ),

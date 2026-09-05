@@ -4,25 +4,22 @@ import '../../core/theme/app_theme.dart';
 class ComingSoonScreen extends StatelessWidget {
   const ComingSoonScreen({super.key});
 
-  static const Color _bg = Color(0xFF0A1628);
-  static const Color _card = Color(0xFF111F3A);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.offWhite,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AppColors.offWhite,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 20),
+              color: AppColors.navy, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Sign Shoppy',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.navy,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -40,16 +37,19 @@ class ComingSoonScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: _card,
+                  color: AppColors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.yellow.withOpacity(0.3),
-                    width: 2,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.storefront_outlined,
-                  color: AppColors.yellow,
+                  color: AppColors.yellowDark,
                   size: 56,
                 ),
               ),
@@ -59,7 +59,7 @@ class ComingSoonScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 20, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.yellow.withOpacity(0.12),
+                  color: AppColors.yellow.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: AppColors.yellow.withOpacity(0.4),
@@ -69,7 +69,7 @@ class ComingSoonScreen extends StatelessWidget {
                 child: const Text(
                   '🚀  COMING SOON',
                   style: TextStyle(
-                    color: AppColors.yellow,
+                    color: AppColors.yellowDark,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
@@ -80,7 +80,7 @@ class ComingSoonScreen extends StatelessWidget {
               const Text(
                 'Sign Shoppy',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.navy,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -90,7 +90,7 @@ class ComingSoonScreen extends StatelessWidget {
                 'We\'re building something exciting — a dedicated marketplace for all your signage needs. Shop materials, products, and accessories right from the app.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white54,
+                  color: AppColors.grey,
                   fontSize: 14,
                   height: 1.6,
                 ),
@@ -103,7 +103,7 @@ class ComingSoonScreen extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.yellow,
-                    foregroundColor: _bg,
+                    foregroundColor: AppColors.navy,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

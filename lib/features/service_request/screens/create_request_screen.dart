@@ -1,4 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../core/theme/app_theme.dart';
+
+// ── Google API key (same one used in AndroidManifest.xml) ──
+// Restricted to: Android app (com.signagesurgeon.app), Geocoding API,
+// Places API (New), Maps SDK for Android/iOS.
+const String _kGoogleApiKey = 'AIzaSyD8v_obWHOLaRYIlSL2vlOjlSYFChOEvmE';
+const String _kAndroidPackage = 'com.signagesurgeon.app';
+const String _kAndroidCert = 'FF441CA235828F075250E7B23268A62CBDD930B2';
 
 class CreateRequestScreen extends StatefulWidget {
   const CreateRequestScreen({super.key});
@@ -8,13 +21,8 @@ class CreateRequestScreen extends StatefulWidget {
 }
 
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
-  static const Color _bg            = Color(0xFF0A1628);
-  static const Color _card          = Color(0xFF111F3A);
-  static const Color _yellow        = Color(0xFFFFD700);
-  static const Color _textPrimary   = Color(0xFFFFFFFF);
-  static const Color _textSecondary = Color(0xFF8A9BB8);
-  static const Color _inputBorder   = Color(0xFF1E3A5F);
-  static const Color _inputFill     = Color(0xFF0D1E35);
+  // Light input fill, sits inside white cards.
+  static const Color _inputFill = Color(0xFFF7F8FA);
 
   static const Map<String, Map<String, dynamic>> _serviceConfig = {
     'repairing': {
@@ -88,6 +96,18 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   final _cityController     = TextEditingController();
   final _pincodeController  = TextEditingController();
 
+  // ── Location / Maps state ──
+  final _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  Timer? _debounce;
+  List<Map<String, String>> _suggestions = [];
+  bool _searchLoading = false;
+  bool _locating = false;
+
+  GoogleMapController? _mapController;
+  LatLng? _pinPosition;
+  static const LatLng _defaultCenter = LatLng(23.0225, 72.5714); // Ahmedabad
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -105,6 +125,9 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     _areaController.dispose();
     _cityController.dispose();
     _pincodeController.dispose();
+    _searchController.dispose();
+    _searchFocus.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -119,6 +142,210 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     return pin.isNotEmpty ? '$parts - $pin' : parts;
   }
 
+  // ─────────────────────────────────────────────
+  // PLACES AUTOCOMPLETE (New API)
+  // ─────────────────────────────────────────────
+  void _onSearchChanged(String input) {
+    _debounce?.cancel();
+    if (input.trim().length < 3) {
+      setState(() => _suggestions = []);
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () => _fetchAutocomplete(input));
+  }
+
+  Future<void> _fetchAutocomplete(String input) async {
+    setState(() => _searchLoading = true);
+    try {
+      final uri = Uri.parse('https://places.googleapis.com/v1/places:autocomplete');
+      final res = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': _kGoogleApiKey,
+          'X-Android-Package': _kAndroidPackage,
+          'X-Android-Cert': _kAndroidCert,
+        },
+        body: jsonEncode({
+          'input': input,
+          'includedRegionCodes': ['in'],
+          'locationBias': {
+            'circle': {
+              'center': {'latitude': 23.0225, 'longitude': 72.5714},
+              'radius': 50000.0,
+            }
+          },
+        }),
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final preds = (data['suggestions'] as List<dynamic>? ?? []);
+        setState(() {
+          _suggestions = preds.map((p) {
+            final placePrediction = p['placePrediction'] as Map<String, dynamic>;
+            return {
+              'placeId': placePrediction['placeId'] as String,
+              'text': placePrediction['text']['text'] as String,
+            };
+          }).toList();
+        });
+      } else {
+        debugPrint('Autocomplete error: ${res.statusCode} ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('Autocomplete exception: $e');
+    } finally {
+      if (mounted) setState(() => _searchLoading = false);
+    }
+  }
+
+  Future<void> _selectSuggestion(Map<String, String> suggestion) async {
+    setState(() {
+      _suggestions = [];
+      _searchController.text = suggestion['text'] ?? '';
+      _searchLoading = true;
+    });
+    FocusScope.of(context).unfocus();
+
+    try {
+      final placeId = suggestion['placeId'];
+      final uri = Uri.parse('https://places.googleapis.com/v1/places/$placeId');
+      final res = await http.get(
+        uri,
+        headers: {
+          'X-Goog-Api-Key': _kGoogleApiKey,
+          'X-Android-Package': _kAndroidPackage,
+          'X-Android-Cert': _kAndroidCert,
+          'X-Goog-FieldMask': 'location,addressComponents,formattedAddress',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final loc = data['location'] as Map<String, dynamic>;
+        final lat = (loc['latitude'] as num).toDouble();
+        final lng = (loc['longitude'] as num).toDouble();
+        _applyAddressComponents(data['addressComponents'] as List<dynamic>? ?? []);
+        _movePin(LatLng(lat, lng));
+      } else {
+        debugPrint('Place details error: ${res.statusCode} ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('Place details exception: $e');
+    } finally {
+      if (mounted) setState(() => _searchLoading = false);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // CURRENT LOCATION
+  // ─────────────────────────────────────────────
+  Future<void> _useCurrentLocation() async {
+    setState(() => _locating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission is required to use this feature.')),
+          );
+        }
+        return;
+      }
+
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enable location services.')),
+          );
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      await _reverseGeocode(latLng);
+      _movePin(latLng);
+    } catch (e) {
+      debugPrint('Location error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not fetch current location.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // REVERSE GEOCODE (used for pin drag + current location)
+  // ─────────────────────────────────────────────
+  Future<void> _reverseGeocode(LatLng point) async {
+    try {
+      final uri = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json'
+        '?latlng=${point.latitude},${point.longitude}&key=$_kGoogleApiKey',
+      );
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final results = data['results'] as List<dynamic>? ?? [];
+        if (results.isNotEmpty) {
+          final first = results.first as Map<String, dynamic>;
+          _applyAddressComponents(first['address_components'] as List<dynamic>? ?? []);
+          _searchController.text = first['formatted_address'] as String? ?? '';
+        }
+      }
+    } catch (e) {
+      debugPrint('Reverse geocode exception: $e');
+    }
+  }
+
+  void _applyAddressComponents(List<dynamic> components) {
+    String area = '', city = '', pincode = '', building = '';
+    for (final c in components) {
+      final types = List<String>.from(c['types'] ?? c['type'] ?? []);
+      final name = (c['longText'] ?? c['long_name'] ?? '') as String;
+      if (types.contains('sublocality') || types.contains('sublocality_level_1')) {
+        area = name;
+      } else if (types.contains('locality')) {
+        city = name;
+      } else if (types.contains('postal_code')) {
+        pincode = name;
+      } else if (types.contains('premise') || types.contains('neighborhood')) {
+        building = name;
+      }
+    }
+    setState(() {
+      if (area.isNotEmpty) _areaController.text = area;
+      if (city.isNotEmpty) _cityController.text = city;
+      if (pincode.isNotEmpty) _pincodeController.text = pincode;
+      if (building.isNotEmpty && _buildingController.text.isEmpty) {
+        _buildingController.text = building;
+      }
+    });
+  }
+
+  void _movePin(LatLng point) {
+    setState(() => _pinPosition = point);
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(point, 16));
+  }
+
+  void _onMarkerDragEnd(LatLng point) {
+    setState(() => _pinPosition = point);
+    _reverseGeocode(point);
+  }
+
+  // ─────────────────────────────────────────────
   void _onContinue() {
     if (_formKey.currentState!.validate()) {
       Navigator.pushNamed(
@@ -130,6 +357,8 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           'priority':    'Normal',
           'siteName':    _buildingController.text.trim(),
           'address':     '${_houseController.text.trim()}, ${_buildingController.text.trim()}, ${_areaController.text.trim()}, ${_cityController.text.trim()} - ${_pincodeController.text.trim()}',
+          'lat':         _pinPosition?.latitude,
+          'lng':         _pinPosition?.longitude,
         },
       );
     }
@@ -141,10 +370,9 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     final categories = List<String>.from(config['categories'] as List);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.offWhite,
       appBar: _buildAppBar(config['title'] as String),
       body: Theme(
-        // Override any global InputDecorationTheme for this screen only
         data: Theme.of(context).copyWith(
           inputDecorationTheme: const InputDecorationTheme(
             filled: true,
@@ -169,9 +397,13 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               _buildDescriptionField(),
               const SizedBox(height: 28),
               _sectionLabel('Location Details'),
-              const SizedBox(height: 6),
-              _buildLocationNote(),
               const SizedBox(height: 10),
+              _buildLocationSearch(),
+              const SizedBox(height: 10),
+              _buildCurrentLocationButton(),
+              const SizedBox(height: 12),
+              _buildMap(),
+              const SizedBox(height: 16),
               _buildLocationFields(),
               const SizedBox(height: 36),
               _buildContinueButton(),
@@ -185,7 +417,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
 
   PreferredSizeWidget _buildAppBar(String title) {
     return AppBar(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.offWhite,
       elevation: 0,
       centerTitle: true,
       leading: GestureDetector(
@@ -193,18 +425,24 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         child: Container(
           margin: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: _card,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _inputBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 16),
+              color: AppColors.navy, size: 16),
         ),
       ),
       title: Text(
         title,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.navy,
           fontSize: 17,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,
@@ -220,7 +458,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           width: 3,
           height: 16,
           decoration: BoxDecoration(
-            color: _yellow,
+            color: AppColors.yellow,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -228,7 +466,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.navy,
             fontSize: 14,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,
@@ -238,44 +476,196 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     );
   }
 
-  Widget _buildLocationNote() {
-    return const Row(
+  // ── Search box + suggestions dropdown ──
+  Widget _buildLocationSearch() {
+    return Column(
       children: [
-        Icon(Icons.info_outline, color: Color(0xFF8A9BB8), size: 13),
-        SizedBox(width: 6),
-        Text(
-          'Maps auto-fill coming soon',
-          style: TextStyle(color: Color(0xFF8A9BB8), fontSize: 11),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            focusNode: _searchFocus,
+            onChanged: _onSearchChanged,
+            style: const TextStyle(color: AppColors.navy, fontSize: 14),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: AppColors.white,
+              hintText: 'Search for your address',
+              hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
+              prefixIcon: const Icon(Icons.search, color: AppColors.yellowDark, size: 20),
+              suffixIcon: _searchLoading
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : null,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            ),
+          ),
         ),
+        if (_suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              children: _suggestions.map((s) {
+                return InkWell(
+                  onTap: () => _selectSuggestion(s),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: AppColors.grey, size: 16),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            s['text'] ?? '',
+                            style: const TextStyle(color: AppColors.navy, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _buildCurrentLocationButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _locating ? null : _useCurrentLocation,
+        icon: _locating
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.yellowDark),
+              )
+            : const Icon(Icons.my_location, size: 16, color: AppColors.yellowDark),
+        label: Text(
+          _locating ? 'Fetching location...' : 'Use Current Location',
+          style: const TextStyle(
+            color: AppColors.navy,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.white,
+          side: const BorderSide(color: AppColors.greyLight),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMap() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 200,
+        child: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _pinPosition ?? _defaultCenter,
+                zoom: _pinPosition != null ? 16 : 12,
+              ),
+              onMapCreated: (c) => _mapController = c,
+              markers: {
+                if (_pinPosition != null)
+                  Marker(
+                    markerId: const MarkerId('selected-location'),
+                    position: _pinPosition!,
+                    draggable: true,
+                    onDragEnd: _onMarkerDragEnd,
+                  ),
+              },
+              onTap: (point) {
+                _movePin(point);
+                _reverseGeocode(point);
+              },
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+            ),
+            if (_pinPosition == null)
+              Container(
+                color: Colors.black.withOpacity(0.03),
+                alignment: Alignment.center,
+                child: const Text(
+                  'Search or tap the map to drop a pin',
+                  style: TextStyle(color: AppColors.grey, fontSize: 12),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildDropdown(List<String> categories) {
     return Container(
       decoration: BoxDecoration(
-        color: _inputFill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _inputBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: DropdownButtonFormField<String>(
         value: _selectedCategory,
-        dropdownColor: _inputFill,
-        iconEnabledColor: _yellow,
+        dropdownColor: AppColors.white,
+        iconEnabledColor: AppColors.yellowDark,
         isExpanded: true,
         style: const TextStyle(
-          color: _textPrimary,
+          color: AppColors.navy,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
         hint: const Text(
           'Select a category',
-          style: TextStyle(color: _textSecondary, fontSize: 14),
+          style: TextStyle(color: AppColors.grey, fontSize: 14),
         ),
         decoration: const InputDecoration(
           filled: true,
-          fillColor: _inputFill,
+          fillColor: AppColors.white,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -288,7 +678,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                   value: c,
                   child: Text(c,
                       style: const TextStyle(
-                          color: _textPrimary, fontSize: 14)),
+                          color: AppColors.navy, fontSize: 14)),
                 ))
             .toList(),
         onChanged: (val) => setState(() => _selectedCategory = val),
@@ -299,27 +689,33 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Widget _buildDescriptionField() {
     return Container(
       decoration: BoxDecoration(
-        color: _inputFill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _inputBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: TextFormField(
         controller: _descController,
         maxLines: 4,
         maxLength: 200,
         style: const TextStyle(
-            color: _textPrimary, fontSize: 14, height: 1.5),
+            color: AppColors.navy, fontSize: 14, height: 1.5),
         decoration: const InputDecoration(
           filled: true,
-          fillColor: _inputFill,
+          fillColor: AppColors.white,
           hintText: 'Describe your problem here...',
-          hintStyle: TextStyle(color: _textSecondary, fontSize: 14),
+          hintStyle: TextStyle(color: AppColors.grey, fontSize: 14),
           contentPadding: EdgeInsets.all(16),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           errorBorder: InputBorder.none,
-          counterStyle: TextStyle(color: _textSecondary, fontSize: 11),
+          counterStyle: TextStyle(color: AppColors.grey, fontSize: 11),
         ),
         validator: (v) => (v == null || v.trim().isEmpty)
             ? 'Please describe the problem'
@@ -331,9 +727,15 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Widget _buildLocationFields() {
     return Container(
       decoration: BoxDecoration(
-        color: _inputFill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _inputBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -396,27 +798,27 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       controller: controller,
       keyboardType: keyboardType,
       style: const TextStyle(
-          color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w400),
+          color: AppColors.navy, fontSize: 14, fontWeight: FontWeight.w400),
       validator: validator,
       decoration: InputDecoration(
         filled: true,
-        fillColor: _inputFill,
+        fillColor: AppColors.white,
         hintText: hint,
-        hintStyle: const TextStyle(color: _textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, color: _yellow.withOpacity(0.7), size: 18),
+        hintStyle: const TextStyle(color: AppColors.grey, fontSize: 13),
+        prefixIcon: Icon(icon, color: AppColors.yellowDark, size: 18),
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         contentPadding:
             const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         errorStyle:
-            const TextStyle(color: Color(0xFFFF6B6B), fontSize: 11),
+            const TextStyle(color: AppColors.red, fontSize: 11),
       ),
     );
   }
 
   Widget _locationDivider() => const Divider(
-        color: _inputBorder,
+        color: AppColors.greyLight,
         height: 1,
         indent: 14,
         endIndent: 14,
@@ -429,12 +831,12 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       child: ElevatedButton(
         onPressed: _onContinue,
         style: ElevatedButton.styleFrom(
-          backgroundColor: _yellow,
-          foregroundColor: Colors.black,
+          backgroundColor: AppColors.yellow,
+          foregroundColor: AppColors.navy,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14)),
           elevation: 2,
-          shadowColor: _yellow.withOpacity(0.4),
+          shadowColor: AppColors.yellow.withOpacity(0.4),
         ),
         child: const Text(
           'Continue',
