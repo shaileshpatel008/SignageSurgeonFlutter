@@ -62,7 +62,7 @@ class DistanceFeeService {
     return {'lat': _fallbackHubLat, 'lng': _fallbackHubLng};
   }
 
-  /// Calls Google Distance Matrix API to get road distance (in km) from
+  /// Calls the Google Routes API (computeRouteMatrix) to get road distance (in km) from
   /// the hub to the given customer lat/lng. Falls back to straight-line
   /// (haversine) distance if the API call fails for any reason.
   static const Map<String, String> _androidHeaders = {
@@ -75,48 +75,76 @@ class DistanceFeeService {
     required double destLng,
   }) async {
     final hub = await getHubLocation();
-    final origin = '${hub['lat']},${hub['lng']}';
-    final dest = '$destLat,$destLng';
 
+    // Google Routes API — computeRouteMatrix. Replaces the legacy
+    // Distance Matrix API, which can no longer be enabled on new projects
+    // (it returned REQUEST_DENIED "You're calling a legacy API").
+    // Requires "Routes API" to be enabled for the key's Cloud project.
     final uri = Uri.parse(
-      'https://maps.googleapis.com/maps/api/distancematrix/json'
-      '?origins=$origin'
-      '&destinations=$dest'
-      '&mode=driving'
-      '&key=$_mapsApiKey',
+      'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix',
     );
+    final body = jsonEncode({
+      'origins': [
+        {
+          'waypoint': {
+            'location': {
+              'latLng': {'latitude': hub['lat'], 'longitude': hub['lng']},
+            },
+          },
+        },
+      ],
+      'destinations': [
+        {
+          'waypoint': {
+            'location': {
+              'latLng': {'latitude': destLat, 'longitude': destLng},
+            },
+          },
+        },
+      ],
+      'travelMode': 'DRIVE',
+    });
 
     try {
-      final response = await http.get(uri, headers: _androidHeaders);
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': _mapsApiKey,
+          'X-Goog-FieldMask': 'originIndex,destinationIndex,distanceMeters,condition,status',
+          ..._androidHeaders,
+        },
+        body: body,
+      );
       // ignore: avoid_print
-      print('DistanceMatrix status=${response.statusCode} body=${response.body}');
+      print('RouteMatrix status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['status'] != 'OK') {
-          // ignore: avoid_print
-          print('DistanceMatrix top-level status: ${json['status']} — ${json['error_message'] ?? ''}');
-        }
-        final rows = json['rows'] as List?;
-        if (rows != null && rows.isNotEmpty) {
-          final elements = rows[0]['elements'] as List?;
-          if (elements != null && elements.isNotEmpty) {
-            final element = elements[0];
-            if (element['status'] == 'OK') {
-              final meters = element['distance']['value'] as int;
-              final km = meters / 1000.0;
-              // ignore: avoid_print
-              print('Road distance from Distance Matrix API: ${km}km');
-              return km;
-            } else {
-              // ignore: avoid_print
-              print('DistanceMatrix element status: ${element['status']}');
-            }
+        final decoded = jsonDecode(response.body);
+        // The REST response is a JSON array of elements (one per
+        // origin/destination pair). We only send one pair.
+        final elements = decoded is List ? decoded : [decoded];
+        if (elements.isNotEmpty) {
+          final element = elements.first as Map<String, dynamic>;
+          final condition = element['condition'];
+          final meters = element['distanceMeters'];
+          if (condition == 'ROUTE_EXISTS' && meters is num) {
+            final km = meters / 1000.0;
+            // ignore: avoid_print
+            print('Road distance from Routes API: ${km}km');
+            return km;
           }
+          // ignore: avoid_print
+          print('RouteMatrix element condition=$condition status=${element['status']}');
         }
+      } else {
+        // Typical causes: 403 PERMISSION_DENIED = Routes API not enabled
+        // or not allowed by the API key's restrictions.
+        // ignore: avoid_print
+        print('RouteMatrix error ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       // ignore: avoid_print
-      print('DistanceMatrix exception: $e');
+      print('RouteMatrix exception: $e');
     }
 
     final fallback = _haversineKm(hub['lat']!, hub['lng']!, destLat, destLng);
@@ -125,7 +153,7 @@ class DistanceFeeService {
     return fallback;
   }
 
-  /// Straight-line distance fallback (used only if Distance Matrix API fails).
+  /// Straight-line distance fallback (used only if the Routes API call fails).
   /// Multiplied by 1.3 as a rough "road winding factor" so it's not an
   /// unrealistic underestimate compared to actual driving distance.
   static double _haversineKm(
