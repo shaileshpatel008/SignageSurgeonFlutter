@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing — the keystore and its passwords must never be committed.
+# Copy android/key.properties.sample to android/key.properties and fill in
+# your own local values; that file stays gitignored.
+/android/key.properties
+*.jks
+*.keystore
