@@ -21,7 +21,11 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.example.signage_surgeon"
-    compileSdk = flutter.compileSdkVersion
+    // Google Play requires new apps/updates to target Android 16 (API 36)
+    // as of Aug 31, 2026 — targetSdk 34 would be rejected at upload today.
+    // Hardcoded rather than left on flutter.compileSdkVersion so this
+    // doesn't silently regress if an older Flutter SDK is used to build.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -35,7 +39,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true

@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_routes.dart';
 import '../bloc/auth_bloc.dart';
@@ -18,6 +20,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Play Store requires a working, reachable privacy policy link inside
+  // the app (the plain, non-tappable text here previously didn't link
+  // anywhere) — same URLs account_screen.dart links Terms & Conditions to.
+  static const String _privacyPolicyUrl =
+      'https://www.thesignagesurgeon.com/privacy-policy';
+  static const String _termsAndConditionsUrl =
+      'https://www.thesignagesurgeon.com/terms-and-conditions';
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -27,6 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
   void _sendOtp(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(SendOtpEvent(_phoneController.text.trim()));
+    }
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the link. Please try again.')),
+      );
     }
   }
 
@@ -165,10 +185,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const Spacer(flex: 3),
 
-                    // Terms text
-                    const Text(
-                      'By signing up you agree to our Privacy Policy and Terms',
-                      style: TextStyle(fontSize: 12, color: AppColors.grey),
+                    // Terms text — "Privacy Policy" and "Terms" are real
+                    // tappable links now, not just words in a static string.
+                    Text.rich(
+                      TextSpan(
+                        style: const TextStyle(fontSize: 12, color: AppColors.grey),
+                        children: [
+                          const TextSpan(text: 'By signing up you agree to our '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.navy),
+                            recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_privacyPolicyUrl),
+                          ),
+                          const TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Terms',
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.navy),
+                            recognizer: TapGestureRecognizer()..onTap = () => _openUrl(_termsAndConditionsUrl),
+                          ),
+                        ],
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
