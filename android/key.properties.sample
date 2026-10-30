@@ -1,4 +1,4 @@
 storePassword=REPLACE_ME
 keyPassword=REPLACE_ME
-keyAlias=upload
+keyAlias=signagesurgeon
 storeFile=/absolute/path/to/signagesurgeon-upload-key.jks
