@@ -114,7 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    // _loadUserData();
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      debugPrint('AUTH STATE: user = ${user?.uid}');
+      if (user != null) {
+        _loadUserData(user);
+      }
+    });
     _autoScrollBanner();
     NotificationService.instance.start();
     PushNotificationService.instance.init();
@@ -133,14 +139,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _loadUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  Future<void> _loadUserData(User user) async {
     try {
+      debugPrint('FETCHING FIRESTORE DOC for uid: ${user.uid}');
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
+
+      debugPrint('DOC EXISTS: ${doc.exists}');
+      debugPrint('DOC DATA: ${doc.data()}');
+
       if (doc.exists && mounted) {
         final data = doc.data()!;
         setState(() {
@@ -148,8 +157,12 @@ class _HomeScreenState extends State<HomeScreen> {
               data['fullName'] ?? data['name'] ?? data['businessName'] ?? '';
           _location = '${data['city'] ?? 'Ahmedabad'}, Gujarat';
         });
+        debugPrint('LOCATION SET TO: $_location');
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('FIRESTORE ERROR: $e');
+      debugPrint('$st');
+    }
   }
 
   @override
@@ -416,8 +429,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _serviceCard(Map<String, dynamic> s) {
     return GestureDetector(
-      onTap: () =>
-          Navigator.pushNamed(context, s['route'], arguments: s['arg']),
+      onTap: () {
+        // print("Latitude :: ");
+        Navigator.pushNamed(context, s['route'], arguments: s['arg']);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,

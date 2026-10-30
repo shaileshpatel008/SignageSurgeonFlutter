@@ -667,7 +667,8 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
 
   Future<void> _onSubmitPressed() async {
     if (!_canSubmit) {
-      _showSnack('Please complete all required fields and select at least 2 photos.');
+      // _showSnack('Please complete all required fields and select at least 2 photos.');
+      _showSnack(_submitBlockedReason ?? 'Please complete all required fields.');
       return;
     }
     if (_feeResult!.status == FeeStatus.beyondRange) {
@@ -1040,6 +1041,7 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _debugCanSubmit();
     return Scaffold(
       backgroundColor: AppColors.offWhite,
       appBar: _buildAppBar(),
@@ -1892,6 +1894,43 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
         ],
       ),
     );
+  }
+
+  void _debugCanSubmit() {
+    debugPrint('--- canSubmit check ---');
+    debugPrint('cityUnavailable: $_cityUnavailable');
+    debugPrint('signageType: $_signageType');
+    debugPrint('selectedIssues: $_selectedIssues');
+    debugPrint('installationPlace: $_installationPlace');
+    debugPrint('illumination: $_illumination');
+    debugPrint('approxSize: $_approxSize');
+    debugPrint('installationHeight: $_installationHeight');
+    debugPrint('accessEquipment: $_accessEquipment');
+    debugPrint('filledPhotoCount: $_filledPhotoCount');
+    debugPrint('house: "${_houseController.text.trim()}"');
+    debugPrint('area: "${_areaController.text.trim()}"');
+    debugPrint('lat/lng: $_lat / $_lng');
+    debugPrint('feeResult: $_feeResult');
+    debugPrint('feeResult.status: ${_feeResult?.status}');
+    debugPrint('-----------------------');
+  }
+
+  String? get _submitBlockedReason {
+    if (_cityUnavailable) return 'We don\'t service this city yet';
+    if (_signageType == null) return 'Select a signage type';
+    if (_selectedIssues.isEmpty) return 'Select at least one issue';
+    if (_installationPlace == null) return 'Select installation place';
+    if (_illumination == null) return 'Select illumination type';
+    if (_approxSize == null) return 'Select approximate size';
+    if (_installationHeight == null) return 'Select installation height';
+    if (_accessEquipment == null) return 'Select access equipment';
+    if (_filledPhotoCount < 2) return 'Add at least 2 photos';
+    if (_houseController.text.trim().isEmpty) return 'Enter House / Shop No.';
+    if (_areaController.text.trim().isEmpty) return 'Enter Area';
+    if (_lat == null || _lng == null) return 'Select a location on the map';
+    if (_feeResult == null) return 'Waiting for fee calculation';
+    if (_feeResult!.status == FeeStatus.configMissing) return 'Pricing not configured — contact support';
+    return null;
   }
 
   Widget _feeRow(String label, String value, {bool bold = false}) {
