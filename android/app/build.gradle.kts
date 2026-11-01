@@ -20,7 +20,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.signage_surgeon"
+    namespace = "com.signagesurgeon.app"
     // Google Play requires new apps/updates to target Android 16 (API 36)
     // as of Aug 31, 2026 — targetSdk 34 would be rejected at upload today.
     // Hardcoded rather than left on flutter.compileSdkVersion so this
@@ -34,10 +34,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Final — matches the Android app already registered in Firebase
+        // (google-services.json), so this can't change without
+        // re-registering a new Firebase Android app and swapping configs.
         applicationId = "com.signagesurgeon.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

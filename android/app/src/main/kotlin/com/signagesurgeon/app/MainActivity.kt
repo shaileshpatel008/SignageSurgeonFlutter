@@ -1,4 +1,4 @@
-package com.example.signage_surgeon
+package com.signagesurgeon.app
 
 import io.flutter.embedding.android.FlutterActivity
 
