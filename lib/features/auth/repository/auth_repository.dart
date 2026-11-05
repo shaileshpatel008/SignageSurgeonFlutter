@@ -49,6 +49,15 @@ class AuthRepository {
           message = 'Too many attempts. Please try after some time.';
         } else if (e.code == 'operation-not-allowed') {
           message = 'SMS not enabled. Please contact support.';
+        } else if (e.code == 'network-request-failed') {
+          // The silent reCAPTCHA/Play Integrity check that precedes
+          // codeSent needs a live connection — a flaky network here
+          // fails right on this screen, before an OTP is ever sent.
+          message = 'Network error. Please check your internet connection and try again.';
+        } else if (e.code == 'app-not-authorized' || e.code == 'missing-client-identifier') {
+          message = 'App verification failed. Please update the app and try again.';
+        } else if (e.code == 'quota-exceeded') {
+          message = 'SMS quota exceeded. Please try again later.';
         }
         print('AUTH ERROR CODE: ${e.code}');
         print('AUTH ERROR MSG: ${e.message}');

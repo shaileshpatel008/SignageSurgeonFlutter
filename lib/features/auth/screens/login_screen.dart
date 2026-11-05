@@ -67,6 +67,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   'phoneNumber': state.phoneNumber,
                 },
               );
+            } else if (state is OtpVerified) {
+              // Firebase auto-verified the SMS (instant verification) before
+              // the user ever reached the OTP screen — sign-in already
+              // succeeded, so route onward the same way otp_screen.dart does.
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.success,
+                (route) => false,
+                arguments: {'isNewUser': state.isNewUser},
+              );
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
