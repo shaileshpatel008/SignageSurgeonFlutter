@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import 'service_unavailable_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/saved_address_picker.dart';
 import '../../../core/constants/app_routes.dart';
@@ -465,6 +466,14 @@ class _CleaningRequestScreenState extends State<CleaningRequestScreen> {
       _showSnack('Please complete all required fields and select 3 to 5 photos.');
       return;
     }
+
+    // Diwali break — bookings are paused, so show that instead of actually
+    // submitting the request. Nothing is written to Firestore; the
+    // filled-in form is untouched. Remove this push and uncomment the
+    // block below once services resume.
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceUnavailableScreen()));
+
+    /*
     setState(() => _submitting = true);
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -507,6 +516,7 @@ class _CleaningRequestScreenState extends State<CleaningRequestScreen> {
       _showSnack('Something went wrong submitting your request. Please try again.');
       setState(() => _submitting = false);
     }
+    */
   }
 
   Future<List<String>> _uploadPhotos(String requestId) async {

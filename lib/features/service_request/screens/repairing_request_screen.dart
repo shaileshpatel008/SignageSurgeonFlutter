@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'service_unavailable_screen.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/distance_fee_service.dart';
@@ -670,6 +671,13 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
       _showSnack(_submitBlockedReason ?? 'Please complete all required fields.');
       return;
     }
+
+    // Diwali break — bookings are paused, so show that instead of starting
+    // payment. Nothing is submitted; the filled-in form is untouched.
+    // Remove this push and uncomment the block below once services resume.
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceUnavailableScreen()));
+
+    /*
     if (_feeResult!.status == FeeStatus.beyondRange) {
       await _saveInquiryOnly();
       return;
@@ -686,6 +694,7 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
       _showSnack('Something went wrong preparing your request. Please try again.');
       setState(() => _submitting = false);
     }
+    */
   }
 
   Future<void> _uploadMedia() async {

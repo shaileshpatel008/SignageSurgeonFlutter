@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'service_unavailable_screen.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/saved_address_picker.dart';
@@ -633,6 +634,13 @@ class _NewSignageRequestScreenState extends State<NewSignageRequestScreen> {
       _showSnack('Please complete all required fields and select at least 2 photos.');
       return;
     }
+
+    // Diwali break — bookings are paused, so show that instead of starting
+    // payment. Nothing is submitted; the filled-in form is untouched.
+    // Remove this push and uncomment the block below once services resume.
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceUnavailableScreen()));
+
+    /*
     if (_feeResult!.status == FeeStatus.beyondRange) {
       await _saveInquiryOnly();
       return;
@@ -649,6 +657,7 @@ class _NewSignageRequestScreenState extends State<NewSignageRequestScreen> {
       _showSnack('Something went wrong preparing your request. Please try again.');
       setState(() => _submitting = false);
     }
+    */
   }
 
   Future<void> _uploadMedia() async {

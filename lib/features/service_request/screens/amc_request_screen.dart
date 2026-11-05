@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'service_unavailable_screen.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_routes.dart';
@@ -471,6 +472,13 @@ class _AmcRequestScreenState extends State<AmcRequestScreen> {
       return;
     }
 
+    // Diwali break — bookings are paused, so show that instead of starting
+    // payment or submitting an inquiry. Nothing is submitted; the
+    // filled-in form is untouched. Remove this push and uncomment the
+    // block below once services resume.
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceUnavailableScreen()));
+
+    /*
     if (_isSixPlus) {
       await _submitInquiryOnly();
       return;
@@ -478,6 +486,7 @@ class _AmcRequestScreenState extends State<AmcRequestScreen> {
 
     setState(() => _submitting = true);
     _openRazorpayCheckout();
+    */
   }
 
   Future<void> _submitInquiryOnly() async {
