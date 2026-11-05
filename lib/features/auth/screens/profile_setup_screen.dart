@@ -216,8 +216,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               ? 'Address is required'
                               : null,
                         ),
-                        const SizedBox(height: 14),
-                        _buildGoogleLocationPlaceholder(),
+                        // Hidden for now — a "Coming soon" row with no real
+                        // map/pin-drop behind it was confusing users (looked
+                        // like a broken feature). Not removed, just hidden;
+                        // bring back once GPS pin-drop is actually built.
+                        // const SizedBox(height: 14),
+                        // _buildGoogleLocationPlaceholder(),
 
                         const SizedBox(height: 28),
 
