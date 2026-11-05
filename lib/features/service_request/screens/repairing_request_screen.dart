@@ -667,7 +667,6 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
 
   Future<void> _onSubmitPressed() async {
     if (!_canSubmit) {
-      // _showSnack('Please complete all required fields and select at least 2 photos.');
       _showSnack(_submitBlockedReason ?? 'Please complete all required fields.');
       return;
     }
@@ -1121,7 +1120,7 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
             ],
             const SizedBox(height: 24),
 
-            _sectionLabel('7. Photos (min. 2 required)'),
+            _sectionLabel('7. Photos (min. 2 required)', isError: _filledPhotoCount < 2),
             const SizedBox(height: 6),
             _buildNote('Front, Left, Right, Top, Bottom — any 2 or more'),
             const SizedBox(height: 10),
@@ -1203,16 +1202,17 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
     );
   }
 
-  Widget _sectionLabel(String label) {
+  Widget _sectionLabel(String label, {bool isError = false}) {
+    final color = isError ? AppColors.red : AppColors.navy;
     return Row(
       children: [
         Container(
           width: 3, height: 16,
-          decoration: BoxDecoration(color: AppColors.serviceAccent, borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(color: isError ? AppColors.red : AppColors.serviceAccent, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(label, style: const TextStyle(color: AppColors.navy, fontSize: 14, fontWeight: FontWeight.w700)),
+          child: Text(label, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -1954,7 +1954,12 @@ class _RepairingRequestScreenState extends State<RepairingRequestScreen> {
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
-        onPressed: (_canSubmit && !_submitting) ? _onSubmitPressed : null,
+        // Always wired to _onSubmitPressed (not gated on _canSubmit) so a tap
+        // while required fields are missing still runs the validation check
+        // and shows _submitBlockedReason via _showSnack — a disabled button
+        // (onPressed: null) swallows taps with zero feedback, which was the
+        // actual bug: users had no idea why nothing happened.
+        onPressed: _submitting ? null : _onSubmitPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.yellow,
           disabledBackgroundColor: AppColors.greyLight,

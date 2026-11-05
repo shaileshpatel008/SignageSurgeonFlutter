@@ -587,7 +587,7 @@ class _CleaningRequestScreenState extends State<CleaningRequestScreen> {
               ],
               const SizedBox(height: 24),
 
-              _sectionLabel('5. Signage Photos (3–5 required)'),
+              _sectionLabel('5. Signage Photos (3–5 required)', isError: _filledPhotoCount < 3),
               const SizedBox(height: 6),
               _buildNote('Full Signage, Front View, Close-up, Wider Area — minimum 3, maximum 5'),
               const SizedBox(height: 10),
@@ -645,12 +645,13 @@ class _CleaningRequestScreenState extends State<CleaningRequestScreen> {
     );
   }
 
-  Widget _sectionLabel(String label) {
+  Widget _sectionLabel(String label, {bool isError = false}) {
+    final color = isError ? AppColors.red : AppColors.navy;
     return Row(
       children: [
-        Container(width: 3, height: 16, decoration: BoxDecoration(color: AppColors.serviceAccent, borderRadius: BorderRadius.circular(2))),
+        Container(width: 3, height: 16, decoration: BoxDecoration(color: isError ? AppColors.red : AppColors.serviceAccent, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
-        Expanded(child: Text(label, style: const TextStyle(color: AppColors.navy, fontSize: 14, fontWeight: FontWeight.w700))),
+        Expanded(child: Text(label, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700))),
       ],
     );
   }
@@ -999,7 +1000,11 @@ class _CleaningRequestScreenState extends State<CleaningRequestScreen> {
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
-        onPressed: (_canSubmit && !_submitting) ? _onSubmitPressed : null,
+        // Always wired to _onSubmitPressed (not gated on _canSubmit) so a tap
+        // while required fields are missing still runs the validation check
+        // and shows the _showSnack message — a disabled button (onPressed:
+        // null) swallows taps with zero feedback, which was the actual bug.
+        onPressed: _submitting ? null : _onSubmitPressed,
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.yellow, disabledBackgroundColor: AppColors.greyLight, foregroundColor: AppColors.navy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 2),
         child: _submitting
             ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy))

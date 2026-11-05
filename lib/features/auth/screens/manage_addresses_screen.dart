@@ -561,7 +561,12 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: (_canSave && !_saving) ? _save : null,
+                // Always wired to _save (not gated on _canSave) so a tap
+                // while required fields are missing still runs the
+                // validation check and shows the _showSnack message — a
+                // disabled button (onPressed: null) swallows taps with zero
+                // feedback, which was the actual bug.
+                onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.yellow, disabledBackgroundColor: AppColors.greyLight, foregroundColor: AppColors.navy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 2),
                 child: _saving
                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy))
