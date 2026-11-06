@@ -7,6 +7,7 @@ import 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   String? _verificationId;
+  String? _phoneNumber;
 
   AuthBloc(this._authRepository) : super(AuthInitial()) {
     on<SendOtpEvent>(_onSendOtp);
@@ -22,6 +23,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         onData: (state) {
           if (state is OtpSent) {
             _verificationId = state.verificationId;
+            _phoneNumber = state.phoneNumber;
           }
           return state;
         },
@@ -44,18 +46,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         verificationId: _verificationId!,
         otp: event.otp,
       );
-      final uid = userCredential.user!.uid;
-      final isProfileComplete = await _authRepository.isProfileComplete(uid);
-      emit(OtpVerified(isNewUser: !isProfileComplete));
+      await _emitSignedInState(userCredential.user, emit);
     } on FirebaseAuthException catch (e) {
+      // Firebase can report an error here (e.g. session-expired, most
+      // likely from a slow app-verification step upstream) even though
+      // signInWithCredential actually went through underneath it. Trust
+      // ground truth over the error: if we're genuinely signed in as this
+      // exact phone number, treat it as success rather than showing an
+      // error for a login that already worked.
+      if (_isSignedInAs(_phoneNumber)) {
+        await _emitSignedInState(_authRepository.currentUser, emit);
+        return;
+      }
       String message = 'Invalid OTP. Please try again.';
       if (e.code == 'session-expired') {
         message = 'OTP expired. Please resend.';
       }
       emit(AuthError(message, code: e.code));
     } catch (e) {
+      if (_isSignedInAs(_phoneNumber)) {
+        await _emitSignedInState(_authRepository.currentUser, emit);
+        return;
+      }
       emit(AuthError('Something went wrong. Please try again.'));
     }
+  }
+
+  bool _isSignedInAs(String? phoneNumber) {
+    final user = _authRepository.currentUser;
+    if (user == null || phoneNumber == null) return false;
+    return user.phoneNumber?.endsWith(phoneNumber) ?? false;
+  }
+
+  Future<void> _emitSignedInState(User? user, Emitter<AuthState> emit) async {
+    final isProfileComplete = await _authRepository.isProfileComplete(user!.uid);
+    emit(OtpVerified(isNewUser: !isProfileComplete));
   }
 
   Future<void> _onResendOtp(
