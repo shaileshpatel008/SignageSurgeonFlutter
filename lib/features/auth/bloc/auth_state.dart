@@ -17,5 +17,6 @@ class OtpVerified extends AuthState {
 
 class AuthError extends AuthState {
   final String message;
-  AuthError(this.message);
+  final String? code;
+  AuthError(this.message, {this.code});
 }

@@ -114,12 +114,32 @@ class _OtpScreenState extends State<OtpScreen> {
               }
             } else if (state is AuthError) {
               _submitting = false;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.red,
-                ),
-              );
+              if (state.code == 'session-expired') {
+                // The verification session Firebase issued at codeSent has
+                // lapsed (commonly from a slow app-verification step before
+                // the SMS was even sent) — the OTP itself was never wrong.
+                // Get the user a fresh session automatically instead of
+                // leaving them stuck on a dead "resend" link.
+                _otpController.clear();
+                context.read<AuthBloc>().add(ResendOtpEvent(_phoneNumber));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'That code expired before it could be checked. '
+                      'Sending a new one now — please enter it when it arrives.',
+                    ),
+                    backgroundColor: AppColors.navy,
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: AppColors.red,
+                  ),
+                );
+              }
             }
           },
           child: SafeArea(

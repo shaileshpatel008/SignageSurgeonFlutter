@@ -52,7 +52,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (e.code == 'session-expired') {
         message = 'OTP expired. Please resend.';
       }
-      emit(AuthError(message));
+      emit(AuthError(message, code: e.code));
     } catch (e) {
       emit(AuthError('Something went wrong. Please try again.'));
     }
