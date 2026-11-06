@@ -18,6 +18,7 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController _otpController = TextEditingController();
   String _phoneNumber = '';
+  bool _submitting = false;
 
   @override
   void didChangeDependencies() {
@@ -34,7 +35,19 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _verifyOtp(BuildContext context) {
+    // Pinput's onCompleted and the LOG IN button can both call this — if
+    // they land close together (autofill landing right as the user taps
+    // LOG IN), both can fire before the bloc's AuthLoading state has
+    // propagated back to this widget (that round-trip is async, so
+    // checking the bloc's state here isn't enough on its own). A local,
+    // synchronous flag is what actually closes the race. Without it,
+    // two VerifyOtpEvents go out with the same verificationId+code: the
+    // first sign-in succeeds, and the now-consumed verification session
+    // makes the second fail with Firebase's session-expired — shown as a
+    // false "OTP expired" even though the user is already signed in.
+    if (_submitting) return;
     if (_otpController.text.length == 6) {
+      _submitting = true;
       context.read<AuthBloc>().add(VerifyOtpEvent(_otpController.text));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +113,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 );
               }
             } else if (state is AuthError) {
+              _submitting = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
