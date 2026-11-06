@@ -10,13 +10,26 @@ class AuthRepository {
   User? get currentUser => _auth.currentUser;
 
   Future<bool> isProfileComplete(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
-    if (!doc.exists) return false;
-    final data = doc.data();
-    if (data == null) return false;
-    return data['fullName'] != null &&
-        data['businessName'] != null &&
-        data['address'] != null;
+    // Runs immediately after signInWithCredential succeeds, purely to
+    // decide which screen to route to next. A brand-new user has no
+    // users/{uid} doc yet, and that read can fail here (a security rule
+    // that can't evaluate against a non-existent doc, or the fresh auth
+    // token not yet propagated to Firestore) even though sign-in itself
+    // already succeeded. Never let that turn an actual successful login
+    // into a visible error — worst case, just treat it as an incomplete
+    // profile and send them to profile setup.
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (!doc.exists) return false;
+      final data = doc.data();
+      if (data == null) return false;
+      return data['fullName'] != null &&
+          data['businessName'] != null &&
+          data['address'] != null;
+    } catch (e) {
+      print('isProfileComplete check failed (treating as incomplete): $e');
+      return false;
+    }
   }
 
   Stream<AuthState> sendOtpStream({required String phoneNumber}) {
